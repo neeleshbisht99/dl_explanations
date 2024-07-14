@@ -67,7 +67,7 @@ class GradCam:
         
         heatmap = np.maximum(heatmap, 0)
         heatmap /= np.max(heatmap) # depth, width, height
-        heatmap = np.transpose(heatmap, (1,2,0)) # width, height, depth
+        heatmap = np.transpose(heatmap, (1, 2, 0)) # width, height, depth
         return heatmap
 
     @staticmethod
