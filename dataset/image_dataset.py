@@ -2,7 +2,7 @@ import nibabel as nib
 from scipy.ndimage import zoom
 from scipy import ndimage
 
-from config import config
+from config import CnnConfig
 
 class ImageDataset:
     @staticmethod
@@ -40,12 +40,13 @@ class ImageDataset:
     @staticmethod
     def process_image(path, is_mask_file = False):
         """Read and resize volume"""
+        config = CnnConfig()
         # Read scan
         volume = ImageDataset.read_nifti_file(path)
         # Normalize
         volume = ImageDataset.normalize(volume)
         # Resize width, height and depth
         volume = ImageDataset.resize_volume(
-            volume, config['img_size'], config['img_size'], config['depth']
+            volume, config.img_size, config.img_size, config.depth
         )
         return volume

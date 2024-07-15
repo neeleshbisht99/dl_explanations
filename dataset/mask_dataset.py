@@ -2,7 +2,7 @@ import nibabel as nib
 from scipy.ndimage import zoom
 from scipy import ndimage
 
-from config import config
+from config import CnnConfig
 
 class MaskDataset():
     @staticmethod
@@ -32,10 +32,11 @@ class MaskDataset():
     @staticmethod
     def process_mask(path):
         """Read and resize volume"""
+        config = CnnConfig()
         # Read mask
         volume = MaskDataset.read_nifti_file(path)
         # Resize width, height and depth
         volume = MaskDataset.resize_mask_volume(
-            volume, config['img_size'], config['img_size'], config['depth']
+            volume, config.img_size, config.img_size, config.depth
         )
         return volume

@@ -8,7 +8,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from dataset.image_dataset import ImageDataset
 from dataset.utils import Utils
-from config import config
+from config import CnnConfig
 
 class CTScanDataset(Dataset):
     def __init__(self, scans, labels, transform=None):
@@ -32,7 +32,7 @@ class CTScanDataset(Dataset):
 class TrainTestDataset:
 
     def __init__(self):
-        
+        config = CnnConfig()
         normal_dataset, abnormal_dataset = self.get_data()
         abnormal_labels = np.array([1 for _ in range(len(abnormal_dataset))])
         normal_labels = np.array([0 for _ in range(len(normal_dataset))])
@@ -43,9 +43,9 @@ class TrainTestDataset:
         self.test_dataset = test_dataset
 
         # Create data loaders
-        self.train_loader = DataLoader(self.train_dataset, batch_size=config['batch_size'], shuffle=True) # channel, depth, width, height
-        self.validation_loader = DataLoader(self.validation_dataset, batch_size=config['batch_size'], shuffle=False) # channel, depth, width, height
-        self.test_loader = DataLoader(self.test_dataset, batch_size=config['batch_size'], shuffle=False) # channel, depth, width, height
+        self.train_loader = DataLoader(self.train_dataset, batch_size=config.batch_size, shuffle=True) # channel, depth, width, height
+        self.validation_loader = DataLoader(self.validation_dataset, batch_size=config.batch_size, shuffle=False) # channel, depth, width, height
+        self.test_loader = DataLoader(self.test_dataset, batch_size=config.batch_size, shuffle=False) # channel, depth, width, height
 
 
     def get_data(self):
@@ -54,10 +54,10 @@ class TrainTestDataset:
         os.makedirs(output_dir, exist_ok=True)
 
         normal_scan_paths = [os.path.join(output_dir, "CT-0", x) for x in os.listdir(os.path.join(output_dir, "CT-0"))]
-        abnormal_scan_paths = [os.path.join(output_dir, "CT-23", x) for x in os.listdir(os.path.join(output_dir, "CT-23"))]
+        abnormal_scan_paths = [os.path.join(output_dir, "CT-23", x) for x in os.listdir(os.path.join(output_dir, "CT-23"))] + [os.path.join(output_dir, "CT-1", x) for x in os.listdir(os.path.join(output_dir, "CT-1"))]
 
-        # print("CT scans with normal lung tissue: " + str(len(normal_scan_paths)))
-        # print("CT scans with abnormal lung tissue: " + str(len(abnormal_scan_paths)))
+        print("CT scans with normal lung tissue: " + str(len(normal_scan_paths)))
+        print("CT scans with abnormal lung tissue: " + str(len(abnormal_scan_paths)))
 
         abnormal_dataset = np.array([ImageDataset.process_image(path) for path in abnormal_scan_paths])
         normal_dataset = np.array([ImageDataset.process_image(path) for path in normal_scan_paths])

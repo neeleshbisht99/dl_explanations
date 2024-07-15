@@ -43,3 +43,20 @@ class CommonUtils:
         plt.subplots_adjust(wspace=0, hspace=0, left=0, right=1, bottom=0, top=1)
         plt.show()
 
+
+    @staticmethod
+    def plot_accuracy_loss_graphs(train_loss, val_loss, train_acc, val_acc):
+        """Plot accuracy and loss graphs"""
+        _, ax = plt.subplots(1, 2, figsize=(20, 5))
+        ax[0].plot(train_loss, label='Train Loss')
+        ax[0].plot(val_loss, label='Val Loss')
+        ax[0].set_title('Loss')
+        ax[0].legend()
+
+        ax[1].plot(train_acc, label='Train Acc')
+        ax[1].plot(val_acc, label='Val Acc')
+        ax[1].set_title('Accuracy')
+        ax[1].legend()
+
+        plt.show()
+
