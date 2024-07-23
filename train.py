@@ -19,7 +19,6 @@ class Train:
             
             running_loss += loss.item() * inputs.size(0)
             _, preds = torch.max(outputs, 1) 
-            # print("preds", preds, preds.shape)
             running_correct += (preds == labels).sum().item()
             total += labels.size(0)
             

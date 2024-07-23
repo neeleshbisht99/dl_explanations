@@ -2,7 +2,6 @@ import numpy as np
 import os
 import torch
 from torch.utils.data import DataLoader, Dataset
-from sklearn.model_selection import train_test_split
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -33,22 +32,22 @@ class TrainTestDataset:
 
     def __init__(self):
         config = CnnConfig()
-        normal_dataset, abnormal_dataset = self.get_data()
-        abnormal_labels = np.array([1 for _ in range(len(abnormal_dataset))])
-        normal_labels = np.array([0 for _ in range(len(normal_dataset))])
+        normal_scan_paths, abnormal_scan_paths = self.get_paths()
+        abnormal_labels = [1 for _ in range(len(abnormal_scan_paths))]
+        normal_labels = [0 for _ in range(len(normal_scan_paths))]
 
-        train_dataset, validation_dataset, test_dataset = self.get_train_validate_test_dataset(normal_dataset, abnormal_dataset, normal_labels, abnormal_labels)
+        train_dataset, validation_dataset, test_dataset = self.get_train_validate_test_dataset(normal_scan_paths, abnormal_scan_paths, normal_labels, abnormal_labels)
         self.train_dataset = train_dataset
         self.validation_dataset = validation_dataset
         self.test_dataset = test_dataset
 
         # Create data loaders
-        self.train_loader = DataLoader(self.train_dataset, batch_size=config.batch_size, shuffle=True) # channel, depth, width, height
-        self.validation_loader = DataLoader(self.validation_dataset, batch_size=config.batch_size, shuffle=False) # channel, depth, width, height
-        self.test_loader = DataLoader(self.test_dataset, batch_size=config.batch_size, shuffle=False) # channel, depth, width, height
+        self.train_loader = DataLoader(self.train_dataset, batch_size=config.batch_size, shuffle=True) # channel, depth, height, width
+        self.validation_loader = DataLoader(self.validation_dataset, batch_size=config.batch_size, shuffle=False) # channel, depth, height, width
+        self.test_loader = DataLoader(self.test_dataset, batch_size=config.batch_size, shuffle=False) # channel, depth, height, width
 
 
-    def get_data(self):
+    def get_paths(self):
         # Create directories
         output_dir = os.path.join(os.getcwd(), "MosMedData")
         os.makedirs(output_dir, exist_ok=True)
@@ -59,34 +58,37 @@ class TrainTestDataset:
         print("CT scans with normal lung tissue: " + str(len(normal_scan_paths)))
         print("CT scans with abnormal lung tissue: " + str(len(abnormal_scan_paths)))
 
-        abnormal_dataset = np.array([ImageDataset.process_image(path) for path in abnormal_scan_paths])
-        normal_dataset = np.array([ImageDataset.process_image(path) for path in normal_scan_paths])
+        return normal_scan_paths, abnormal_scan_paths
 
-        return normal_dataset, abnormal_dataset
-
-        
-    def get_train_validate_test_dataset(self, normal_dataset, abnormal_dataset, normal_labels, abnormal_labels):
+    def get_train_validate_test_dataset(self, normal_scan_paths, abnormal_scan_paths, normal_labels, abnormal_labels):
         # Split data in the ratio 80-10-10 for training, validation and test.
+        train_end_index = int(len(normal_scan_paths) * 0.8)
+        valid_end_index = train_end_index + int(len(normal_scan_paths) * 0.15)
+        
+        train_scan_paths = normal_scan_paths[:train_end_index] + abnormal_scan_paths[:train_end_index]
+        train_labels = normal_labels[:train_end_index] + abnormal_labels[:train_end_index]
+        train_scan_paths, train_labels = Utils.shuffle(train_scan_paths, train_labels)
 
-        # Concatenate normal and abnormal scans and labels
-        scans = np.concatenate((normal_dataset, abnormal_dataset), axis=0)
-        labels = np.concatenate((normal_labels, abnormal_labels), axis=0)
+        valid_scan_paths = normal_scan_paths[train_end_index:valid_end_index] + abnormal_scan_paths[train_end_index:valid_end_index]
+        valid_labels = normal_labels[train_end_index:valid_end_index] + abnormal_labels[train_end_index:valid_end_index]
+        valid_scan_paths, valid_labels = Utils.shuffle(valid_scan_paths, valid_labels)
 
-        # First split: train and temp (which will be split into validation and test)
-        x_train, x_temp, y_train, y_temp = train_test_split(scans, labels, test_size=0.2, stratify=labels, random_state=42)
+        test_scan_paths = normal_scan_paths[valid_end_index:] + abnormal_scan_paths[valid_end_index:]
+        test_labels = normal_labels[valid_end_index:] + abnormal_labels[valid_end_index:]
+        test_scan_paths, test_labels = Utils.shuffle(test_scan_paths, test_labels)
 
-        # Second split: validation and test
-        x_val, x_test, y_val, y_test = train_test_split(x_temp, y_temp, test_size=0.5, stratify=y_temp, random_state=42)
+        x_train = np.array([ImageDataset.process_image(path) for path in train_scan_paths])
+        x_val = np.array([ImageDataset.process_image(path, train=False) for path in valid_scan_paths])
+        x_test = np.array([ImageDataset.process_image(path, train=False) for path in test_scan_paths])
+
+        y_train = np.array([label for label in train_labels])
+        y_val = np.array([label for label in valid_labels])
+        y_test = np.array([label for label in test_labels])
 
         print(
             'Number of samples in train, validation and test are %d , %d and %d.'
             % (x_train.shape[0], x_val.shape[0], x_test.shape[0])
         )
-
-        x_train_tensor = torch.tensor(x_train)
-        y_train_tensor = torch.tensor(y_train)
-        x_val_tensor = torch.tensor(x_val)
-        y_val_tensor = torch.tensor(y_val)
 
         # Convert to tensors
         x_train_tensor = torch.tensor(x_train, dtype=torch.float32)
