@@ -15,19 +15,6 @@ class ImageDataset:
         return scan
 
     @staticmethod
-    def drop_invalid_range(volume):
-        """
-        Cut off the invalid area
-        """
-        zero_value = volume[0, 0, 0]
-        non_zeros_idx = np.where(volume != zero_value)
-        
-        [max_z, max_h, max_w] = np.max(np.array(non_zeros_idx), axis=1)
-        [min_z, min_h, min_w] = np.min(np.array(non_zeros_idx), axis=1)
-        
-        return volume[min_z:max_z, min_h:max_h, min_w:max_w]
-        
-    @staticmethod
     def normalize(volume):
         """Normalize the volume"""
         min_hu = -1000
@@ -56,9 +43,6 @@ class ImageDataset:
         config = Config()
         # Read scan
         volume = ImageDataset.read_nifti_file(path)
-        # Remove invalid area
-        if train:
-            volume = ImageDataset.drop_invalid_range(volume)
         # Normalize
         volume = ImageDataset.normalize(volume)
         # Resize width, height and depth
