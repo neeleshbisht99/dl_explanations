@@ -1,13 +1,17 @@
 class Config:
     def __init__(self):
-        self.img_size = 128
-        self.depth = 64
+        self.img_size = 224
+        self.depth = 42
+        self.img_width = 336
+        self.img_height = 224
 
 class CnnConfig:
     def __init__(self):
         config = Config()
         self.img_size= config.img_size
         self.depth=config.depth
+        self.img_width = config.img_width
+        self.img_height = config.img_height
 
         self.learning_rate= 1e-4
         self.lr_decay_rate= 0.96
@@ -21,24 +25,26 @@ class ResnetConfig:
         config = Config()
         self.img_size= config.img_size
         self.depth=config.depth
+        self.img_width = config.img_width
+        self.img_height = config.img_height
 
         self.n_classes = 2
-        self.learning_rate = 0.000008 #change
+        self.learning_rate = 1e-5 #change
         self.phase = 'train'
-        self.batch_size = 4
-        self.epochs = 300
-        self.max_epochs = 230 #change
+        self.batch_size = 1
+        self.epochs = 90
+        self.max_epochs = 100 #change
         self.input_D = 64 # not used
         self.input_H = 128 # not used
         self.input_W = 128 # not used
-        self.pretrain_path = 'models/archive/tecent_med3d_pretrain/resnet_34_23dataset.pth' #change
+        self.pretrain_path = None #change
         self.new_layer_names = ['conv_seg']
         self.no_cuda = False
         self.model = 'resnet'
-        self.gpu_id = [3, 4] 
-        self.model_depth = 34 #change
-        self.resnet_shortcut = 'A' #change
+        self.gpu_id = [4, 2] 
+        self.model_depth = 6 #change
+        self.resnet_shortcut = 'B' #change
         self.manual_seed = 27
         self.ci_test = False
-        self.weight_decay= 0.005 #change
-        self.model_path="3d_resnet34_image_classification_i230.pth" #change
+        self.weight_decay= 1e-10 #change
+        self.model_path="3d_resnet6_image_classification_i100.pth" #change

@@ -32,13 +32,13 @@ class ImageDataset:
         height_factor = desired_height / img.shape[1]
         depth_factor = desired_depth / img.shape[-1]
         # Rotate volume by 90 degrees
-        img = ndimage.rotate(img, 90, reshape=False)
+        img = ndimage.rotate(img, 90, axes=(0, 1), reshape=False)
         # Resize the volume using spline interpolated zoom (SIZ)
         img = zoom(img, (width_factor, height_factor, depth_factor), order=1)
         return img
 
     @staticmethod
-    def process_image(path, train=True):
+    def process_image(path):
         """Read and resize volume"""
         config = Config()
         # Read scan
@@ -47,6 +47,7 @@ class ImageDataset:
         volume = ImageDataset.normalize(volume)
         # Resize width, height and depth
         volume = ImageDataset.resize_volume(
-            volume, config.img_size, config.img_size, config.depth
+            volume, config.img_width, config.img_height, config.depth
         )
+        # print(f"processing done for path: {path}", volume.shape)
         return volume

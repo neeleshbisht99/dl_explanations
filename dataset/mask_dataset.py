@@ -1,6 +1,7 @@
 import nibabel as nib
 from scipy.ndimage import zoom
 from scipy import ndimage
+import numpy as np
 
 from config import CnnConfig
 
@@ -37,6 +38,10 @@ class MaskDataset():
         volume = MaskDataset.read_nifti_file(path)
         # Resize width, height and depth
         volume = MaskDataset.resize_mask_volume(
-            volume, config.img_size, config.img_size, config.depth
+            volume, config.img_width, config.img_height, config.depth
         )
+
+        # Binarize
+        volume = np.where(volume > 0.5, 1, 0)
+
         return volume

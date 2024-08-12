@@ -38,7 +38,9 @@ class CounterFactual:
         
         # get the softmax weight
         params = list(model.parameters())
-        weight_softmax = np.squeeze(params[-2].data.cpu().numpy())
+        weight_softmax_4 = np.squeeze(params[-4].data.cpu().numpy())
+        weight_softmax_2 = np.squeeze(params[-2].data.cpu().numpy())
+        weight_softmax = weight_softmax_2.dot(weight_softmax_4)
 
         # get feature map
         model.eval()

@@ -24,7 +24,7 @@ class ResNet(nn.Module):
         self.no_cuda = no_cuda
         super(ResNet, self).__init__()
         self.conv1 = nn.Conv3d(
-            1,
+            2,
             64,
             kernel_size=7,
             stride=(2, 2, 2),
@@ -45,12 +45,19 @@ class ResNet(nn.Module):
             nn.Linear(64, num_classes)
         )
 
+        # for m in self.modules():
+        #     if isinstance(m, nn.Conv3d):
+        #         m.weight = nn.init.kaiming_normal(m.weight, mode='fan_out')
+        #     elif isinstance(m, nn.BatchNorm3d):
+        #         m.weight.data.fill_(1)
+        #         m.bias.data.zero_()
         for m in self.modules():
             if isinstance(m, nn.Conv3d):
-                m.weight = nn.init.kaiming_normal(m.weight, mode='fan_out')
+                nn.init.kaiming_normal_(m.weight, mode='fan_out')
             elif isinstance(m, nn.BatchNorm3d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
 
     def _make_layer(self, block, planes, blocks, shortcut_type, stride=1, dilation=1):
         downsample = None
