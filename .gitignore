@@ -5,3 +5,5 @@ models/archive/
 **/__pycache__/
 
 __pycache__/
+
+rsna/rsna-dataset/
