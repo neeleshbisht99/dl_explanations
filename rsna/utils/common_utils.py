@@ -11,10 +11,13 @@ class CommonUtils:
 
     @staticmethod
     def get_resized_heatmap(heatmap, shape):
-        width = shape[0]
-        height = shape[1]
-        depth = shape[2]
-        upscaled_heatmap = zoom(heatmap, (width / heatmap.shape[0], height / heatmap.shape[1], depth / heatmap.shape[2]), order=1)
+        height, width = shape
+        # Compute the scaling factors for height and width
+        scale_x = width / heatmap.shape[1]
+        scale_y = height / heatmap.shape[0]
+        
+        # Upscale heatmap
+        upscaled_heatmap = zoom(heatmap, (scale_y, scale_x), order=1)
         upscaled_heatmap = np.uint8(255 * upscaled_heatmap)
         return upscaled_heatmap
 

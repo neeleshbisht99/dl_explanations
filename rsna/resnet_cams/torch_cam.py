@@ -6,32 +6,38 @@ import torch
 class TorchCAM():
 
     @staticmethod
-    def compute_grad_cam(img_tensor, model, last_conv_layer_name='module.layer4', target_class_idx=1):
+    def compute_grad_cam(img_tensor, model, last_conv_layer_name='layer4', target_class_idx=1):
         model.eval()
         grad_cam = GradCAM(model, last_conv_layer_name)
-        output, _ = model(img_tensor)
-        grad_cams = grad_cam(class_idx=target_class_idx, scores=output)
-        heatmap = grad_cams[0].cpu().numpy().squeeze()
-        heatmap = np.transpose(heatmap, (2, 1, 0))
-        return heatmap
+        output = model(img_tensor)
+        heatmaps = []
+        for i in range(img_tensor.size(0)):
+            grad_cams = grad_cam(class_idx=target_class_idx, scores=output[i:i+1])
+            heatmap = grad_cams[0].cpu().numpy().squeeze()
+            heatmaps.append(heatmap)
+        return heatmaps
     
     @staticmethod
-    def compute_grad_campp(img_tensor, model, last_conv_layer_name='module.layer4', target_class_idx=1):
+    def compute_grad_campp(img_tensor, model, last_conv_layer_name='layer4', target_class_idx=1):
         model.eval()
         grad_campp = GradCAMpp(model, last_conv_layer_name)
-        output, _ = model(img_tensor)
-        grad_campps = grad_campp(class_idx=target_class_idx, scores=output)
-        heatmap = grad_campps[0].cpu().numpy().squeeze()
-        heatmap = np.transpose(heatmap, (2, 1, 0))
-        return heatmap
+        output = model(img_tensor)
+        heatmaps = []
+        for i in range(img_tensor.size(0)):
+            grad_campps = grad_campp(class_idx=target_class_idx, scores=output[i:i+1])
+            heatmap = grad_campps[0].cpu().numpy().squeeze()
+            heatmaps.append(heatmap)
+        return heatmaps
     
     @staticmethod
-    def compute_score_cam(img_tensor, model, last_conv_layer_name='module.layer4', target_class_idx=1):
+    def compute_score_cam(img_tensor, model, last_conv_layer_name='layer4', target_class_idx=1):
         model.eval()
         score_cam = ScoreCAM(model, last_conv_layer_name)
-        with torch.no_grad():
-            output, _ = model(img_tensor)
-        score_cams = score_cam(class_idx=target_class_idx)
-        heatmap = score_cams[0].cpu().numpy().squeeze()
-        heatmap = np.transpose(heatmap, (2, 1, 0))
-        return heatmap
+        with torch.no_grad(): # TODO: think on this
+            output = model(img_tensor)
+        heatmaps = []
+        for i in range(img_tensor.size(0)):
+            score_cams = score_cam(class_idx=target_class_idx)
+            heatmap = score_cams[0].cpu().numpy().squeeze()
+            heatmaps.append(heatmap)
+        return heatmaps
