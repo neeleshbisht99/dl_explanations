@@ -50,7 +50,7 @@ class Dataset(data.Dataset):
     
 
 class TrainAndValidateDataset:
-    def __init__(self, batch_size=128, test_size=0.1):
+    def __init__(self, batch_size=128, test_size=0.1, val_size=0.1):
         self.transform = transforms.Compose([
                         transforms.RandomHorizontalFlip(),
                         transforms.Resize(224),
@@ -59,14 +59,24 @@ class TrainAndValidateDataset:
         self.all_data = label_data
         self.label_data = label_data.filter(columns)
 
-        self.train_labels, self.val_labels = train_test_split(self.label_data.values, test_size=test_size)
+        # self.train_labels, self.val_labels = train_test_split(self.label_data.values, test_size=test_size)
+        # Split data into train and remaining
+        self.train_labels, remaining_data = train_test_split(self.label_data.values, test_size=test_size + val_size, random_state=42)
+        
+        # Split remaining data into validation and test
+        self.val_labels, self.test_labels = train_test_split(remaining_data, test_size=test_size / (test_size + val_size), random_state=42)
+        
         self.train_paths = [os.path.join(train_f, image[0]) for image in self.train_labels]
         self.val_paths = [os.path.join(train_f, image[0]) for image in self.val_labels]
+        self.test_paths = [os.path.join(train_f, image[0]) for image in self.test_labels]
 
         self.train_dataset = Dataset(self.train_paths, self.train_labels, transform=self.transform, all_data=self.all_data)
         self.val_dataset = Dataset(self.val_paths, self.val_labels, transform=self.transform, all_data=self.all_data)
+        self.test_dataset = Dataset(self.test_paths, self.test_labels, transform=self.transform, all_data=self.all_data)
+
         self.train_loader = data.DataLoader(dataset=self.train_dataset, batch_size=batch_size, shuffle=True)
         self.val_loader = data.DataLoader(dataset=self.val_dataset, batch_size=batch_size, shuffle=False)
+        self.test_loader = data.DataLoader(dataset=self.test_dataset, batch_size=batch_size, shuffle=False)
 
 
     def show_raw_dataset(self, num_to_show=9):

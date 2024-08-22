@@ -14,7 +14,7 @@ class ResnetCAMS:
 
 
     @staticmethod
-    def get_cams(image, resnet_model, last_conv_layer_name, target_class_idx, ref_class_idx, show_cams=False):
+    def get_cams(image, resnet_model, last_conv_layer_name, target_class_idx, ref_class_idx, show_cams=False, final_feature_arr = [], final_label_arr = []):
         # Generate torch-cam score-cam
         # torch_cam_score_cam_heatmap = TorchCAM.compute_score_cam(image, resnet_model, last_conv_layer_name, target_class_idx)
         # torch_cam_score_cam_heatmap = torch_cam_score_cam_heatmap[0]
@@ -43,7 +43,7 @@ class ResnetCAMS:
             plt.show()
 
         # Generate diff class activation heatmap
-        diff_cam_heatmap = DiffCAM.make_diffcam_heatmap(image, resnet_model, last_conv_layer_name, target_class_idx, ref_class_idx)
+        diff_cam_heatmap = DiffCAM.make_diffcam_heatmap(image, resnet_model, last_conv_layer_name, target_class_idx, ref_class_idx, final_feature_arr, final_label_arr)
         if show_cams:
             plt.matshow(diff_cam_heatmap)
             plt.show()
