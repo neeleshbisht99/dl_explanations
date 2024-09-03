@@ -25,6 +25,7 @@ class DiffCAM:
         weight_softmax = weight_softmax_2.dot(weight_softmax_4)
 
         model.eval()
+        # get the feature blobs
         _, features_blobs = model(img_tensor)
         feature = features_blobs[-1].cpu().detach()
         
