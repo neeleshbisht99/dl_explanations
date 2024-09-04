@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 import faiss  
 
 class FeatureExtractor:
@@ -84,6 +85,7 @@ class DiffCAM:
 
         # Forward pass to get features and predictions
         output = model(img_tensor)
+        output_probabilities = torch.softmax(output, dim=1)
 
         # Obtain feature maps from the last convolutional layer
         feature_conv = feature_extractor.get_features()[-1].cpu().detach().numpy()
@@ -93,7 +95,7 @@ class DiffCAM:
         # Remove hooks after obtaining the features
         feature_extractor.remove_hooks()
         
-        return heatmap
+        return heatmap, output_probabilities
 
 
 ########################## OLD diff cam algorithm

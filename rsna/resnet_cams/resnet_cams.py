@@ -23,34 +23,34 @@ class ResnetCAMS:
         #     plt.show()
         
         # Generate torch-cam grad-cam
-        torch_cam_grad_cam_heatmap = TorchCAM.compute_grad_cam(image, resnet_model, last_conv_layer_name, target_class_idx)
+        torch_cam_grad_cam_heatmap, torch_cam_grad_cam_class_output_probabilities = TorchCAM.compute_grad_cam(image, resnet_model, last_conv_layer_name, target_class_idx)
         torch_cam_grad_cam_heatmap = torch_cam_grad_cam_heatmap[0]
         if show_cams:
             plt.matshow(torch_cam_grad_cam_heatmap)
             plt.show()
 
         # Generate torch-cam grad-cam plus
-        torch_cam_grad_campp_heatmap = TorchCAM.compute_grad_campp(image, resnet_model, last_conv_layer_name, target_class_idx)
+        torch_cam_grad_campp_heatmap, torch_cam_grad_campp_class_output_probabilities = TorchCAM.compute_grad_campp(image, resnet_model, last_conv_layer_name, target_class_idx)
         torch_cam_grad_campp_heatmap = torch_cam_grad_campp_heatmap[0]
         if show_cams:
             plt.matshow(torch_cam_grad_campp_heatmap)
             plt.show()
 
         # Generate grad and diff-grad class activation heatmap
-        grad_cam_heatmap, _,  diff_grad_cam_heatmap= GradCam.compute(image, resnet_model, last_conv_layer_name, target_class_idx, ref_class_idx)
+        grad_cam_heatmap, _,  diff_grad_cam_heatmap, grad_cam_target_class_output_probabilities, grad_cam_ref_class_output_probabilities = GradCam.compute(image, resnet_model, last_conv_layer_name, target_class_idx, ref_class_idx)
         if show_cams:
             plt.matshow(grad_cam_heatmap)
             plt.show()
 
         # Generate diff class activation heatmap
-        diff_cam_heatmap = DiffCAM.make_diffcam_heatmap(image, resnet_model, last_conv_layer_name, target_class_idx, ref_class_idx, final_feature_arr, final_label_arr)
+        diff_cam_heatmap, diff_cam_output_probabilities = DiffCAM.make_diffcam_heatmap(image, resnet_model, last_conv_layer_name, target_class_idx, ref_class_idx, final_feature_arr, final_label_arr)
         if show_cams:
             plt.matshow(diff_cam_heatmap)
             plt.show()
 
 
         #Generate counter factual heatmap
-        counter_factual_heatmap = CounterFactual.make_counter_factual_heatmap(image, resnet_model, last_conv_layer_name, target_class_idx, ref_class_idx)
+        counter_factual_heatmap, counter_factual_output_probabilities = CounterFactual.make_counter_factual_heatmap(image, resnet_model, last_conv_layer_name, target_class_idx, ref_class_idx)
         if show_cams:
             plt.matshow(counter_factual_heatmap)
             plt.show()
@@ -68,11 +68,11 @@ class ResnetCAMS:
         torch_cam_score_cam_heatmap = CommonUtils.get_resized_heatmap(torch_cam_score_cam_heatmap, shape)
 
         return {
-            "grad_cam_heatmap": grad_cam_heatmap,
-            "diff_grad_cam_heatmap": diff_grad_cam_heatmap,
-            "diff_cam_heatmap": diff_cam_heatmap,
-            "counter_factual_heatmap": counter_factual_heatmap,
-            "torch_cam_grad_cam_heatmap": torch_cam_grad_cam_heatmap,
-            "torch_cam_grad_campp_heatmap": torch_cam_grad_campp_heatmap,
-            "torch_cam_score_cam_heatmap": torch_cam_score_cam_heatmap
+            "grad_cam_heatmap": {"heatmap": grad_cam_heatmap, "output": grad_cam_target_class_output_probabilities},
+            "diff_grad_cam_heatmap": {"heatmap": diff_grad_cam_heatmap, "output": grad_cam_ref_class_output_probabilities},
+            "diff_cam_heatmap": {"heatmap": diff_cam_heatmap, "output": diff_cam_output_probabilities},
+            "counter_factual_heatmap": {"heatmap": counter_factual_heatmap, "output": counter_factual_output_probabilities},
+            "torch_cam_grad_cam_heatmap": {"heatmap": torch_cam_grad_cam_heatmap, "output": torch_cam_grad_cam_class_output_probabilities},
+            "torch_cam_grad_campp_heatmap": {"heatmap": torch_cam_grad_campp_heatmap, "output": torch_cam_grad_campp_class_output_probabilities},
+            "torch_cam_score_cam_heatmap": {"heatmap": torch_cam_score_cam_heatmap, "output": grad_cam_target_class_output_probabilities}
         }

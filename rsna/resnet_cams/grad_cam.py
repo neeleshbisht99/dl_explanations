@@ -39,6 +39,8 @@ class GradCam:
         # Make a forward pass to get predictions and activations
         model.eval()
         output = model(img_tensor)
+
+        output_probabilities = torch.softmax(output, dim=1)
         
         if pred_index is None:
             pred_index = torch.argmax(output, dim=1)
@@ -54,7 +56,7 @@ class GradCam:
         # Remove hooks after usage
         save_features.remove()
 
-        return activations, gradients
+        return activations, gradients, output_probabilities
 
     @staticmethod
     def make_gradcam_heatmap(activations, weights):
@@ -71,8 +73,8 @@ class GradCam:
     @staticmethod
     def compute(img_tensor, model, last_conv_layer_name, target_class_idx, ref_class_idx):
         # Get activations and gradients for target and reference class
-        activations, target_class_gradients = GradCam.get_activations_and_gradients(img_tensor, model, last_conv_layer_name, pred_index=target_class_idx)
-        _, ref_class_gradients = GradCam.get_activations_and_gradients(img_tensor, model, last_conv_layer_name, pred_index=ref_class_idx)
+        activations, target_class_gradients, target_class_output_probabilities = GradCam.get_activations_and_gradients(img_tensor, model, last_conv_layer_name, pred_index=target_class_idx)
+        _, ref_class_gradients, ref_class_output_probabilities = GradCam.get_activations_and_gradients(img_tensor, model, last_conv_layer_name, pred_index=ref_class_idx)
 
         # Compute gradient weights from the gradients
         target_class_weights = GradCam.compute_gradcam_weights(target_class_gradients)
@@ -87,4 +89,4 @@ class GradCam:
         ref_class_heatmap = GradCam.make_gradcam_heatmap(activations, ref_class_weights)
 
         # Return heatmaps for target class, reference class, and differential heatmap
-        return grad_cam_heatmap, ref_class_heatmap, diff_grad_cam_heatmap
+        return grad_cam_heatmap, ref_class_heatmap, diff_grad_cam_heatmap, target_class_output_probabilities, ref_class_output_probabilities

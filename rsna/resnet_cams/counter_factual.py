@@ -67,6 +67,7 @@ class CounterFactual:
         model.eval()
         # with torch.no_grad():  # use if memory issues are there # Avoid computing gradients
         output = model(img_tensor)
+        output_probabilities = torch.softmax(output, dim=1)
         # Get the softmax weights
         params = list(model.parameters())
         weight_softmax = np.squeeze(params[-2].data.cpu().numpy())
@@ -86,4 +87,4 @@ class CounterFactual:
         # Remove hooks after obtaining the features
         feature_extractor.remove_hooks()
 
-        return heatmap
+        return heatmap, output_probabilities
