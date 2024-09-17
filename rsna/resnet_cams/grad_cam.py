@@ -6,7 +6,9 @@ class SaveFeatures:
         self.activations = None
         self.gradients = None
         # Retrieve the last convolutional layer
-        last_conv_layer = getattr(model, last_conv_layer_name)
+        # last_conv_layer = getattr(model, last_conv_layer_name)
+        # last_conv_layer = getattr(getattr(getattr(getattr(model, 'model'), 'layer4'), '2'), 'conv3')
+        last_conv_layer = next(layer for name, layer in model.named_modules() if name == last_conv_layer_name)
         # Register hooks
         self.forward_handle = last_conv_layer.register_forward_hook(self.activation_hook)
         self.backward_handle = last_conv_layer.register_full_backward_hook(self.gradients_hook)

@@ -22,7 +22,7 @@ class FeatureExtractor:
                 hook = layer.register_forward_hook(self.hook_fn)
                 self.hooks.append(hook)
 
-        embedding_hook = self.model.fc.register_forward_hook(self._embedding_hook_fn)
+        embedding_hook = self.model.model.fc.register_forward_hook(self._embedding_hook_fn)
         self.hooks.append(embedding_hook)
 
     def get_features(self):
@@ -41,7 +41,7 @@ class DiffCAM:
     @staticmethod
     def diffCAM(feature_conv, embedding, target_class_idx, ref_class_idx, all_features, all_labels):
         _, nc, h, w = feature_conv.shape
-        feature_dim = 512
+        feature_dim = 2048
         K = 10
         N = 1
         index_flat = faiss.IndexFlatL2(feature_dim)  # build a flat (CPU) index
