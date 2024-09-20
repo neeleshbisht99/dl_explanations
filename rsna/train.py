@@ -20,9 +20,13 @@ from math import ceil
 from dataset.dataset import TrainAndValidateDataset
 from resnet import Resnet
 
+#### FIND AUC NEXT to compare with the paper
+config = {
+    'learning_rate': 0.0001,
+    'num_epochs' : 20
+}
 
-
-device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
 train_and_validate_dataset = TrainAndValidateDataset()
 label_data = train_and_validate_dataset.label_data
@@ -36,12 +40,12 @@ model = Resnet(device=device)
 
 criterion = nn.CrossEntropyLoss()
 # Observe that all parameters are being optimized
-optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+optimizer = torch.optim.SGD(model.parameters(), lr=config['learning_rate'], momentum=0.9, weight_decay=0.00001)
 # Decay LR by a factor of 0.1 every 7 epochs
 exp_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 
 
-num_epochs = 20
+num_epochs = config['num_epochs']
 # Train the model
 total_step = len(train_loader)
 for epoch in range(num_epochs):
@@ -94,6 +98,6 @@ for images, labels, _ in tqdm(test_loader):
 print(f'Val_Acc: {100 * correct / total}')
 
 
-torch.save(model, './rsna-dataset/model_resnet50_10092024.pth')
+torch.save(model, './rsna-dataset/model_inception_v3_17092024.pth')
 print("Model and weights saved.")
 

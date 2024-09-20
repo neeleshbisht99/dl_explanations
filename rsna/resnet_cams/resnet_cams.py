@@ -8,7 +8,7 @@ from .torch_cam import TorchCAM
 from utils import CommonUtils
 
 #TODO: move to config
-shape = [224,224]
+shape = [299,299]
 
 class ResnetCAMS:
 

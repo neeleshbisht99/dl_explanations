@@ -50,10 +50,10 @@ class Dataset(data.Dataset):
     
 
 class TrainAndValidateDataset:
-    def __init__(self, batch_size=128, test_size=0.1, val_size=0.1):
+    def __init__(self, batch_size=64, test_size=0.1, val_size=0.1):
         self.transform = transforms.Compose([
                         transforms.RandomHorizontalFlip(),
-                        transforms.Resize(224),
+                        transforms.Resize(299),
                         transforms.ToTensor()])
         label_data = pd.read_csv('./rsna-dataset/stage_2_train_labels.csv')
         self.all_data = label_data
@@ -107,7 +107,7 @@ class TrainAndValidateDataset:
     def show_dataloader(self):
         batch = iter(self.train_loader)
         images, labels, _ = next(batch)
-
+        print("batch shape",images.shape)
         image_grid = torchvision.utils.make_grid(images[:4])
         image_np = image_grid.numpy()
         img = np.transpose(image_np, (1, 2, 0))
