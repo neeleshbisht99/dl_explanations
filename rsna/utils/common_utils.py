@@ -2,6 +2,10 @@ import torch
 from scipy.ndimage import zoom
 import numpy as np
 import matplotlib.pyplot as plt
+from math import ceil
+
+Orig_img_size = 1024
+img_size = 299
 
 class CommonUtils:
     @staticmethod
@@ -63,3 +67,31 @@ class CommonUtils:
 
         plt.show()
 
+    @staticmethod
+    def bbox_to_mask(bbox, shape):
+        """Convert bounding box coordinates to binary mask."""
+        x, y, width, height = bbox
+
+        x = ceil(x*img_size/Orig_img_size) if not np.isnan(bbox[0]) else 0
+        y = ceil(y*img_size/Orig_img_size) if not np.isnan(bbox[1]) else 0
+        width = ceil(width*img_size/Orig_img_size) if not np.isnan(bbox[2]) else 0
+        height = ceil(height*img_size/Orig_img_size) if not np.isnan(bbox[3]) else 0
+
+        x_min = x
+        y_min = y
+        x_max = x + width
+        y_max = y + height
+        
+        # Create an empty mask
+        mask = np.zeros(shape, dtype=np.uint8)
+        
+        # Ensure the coordinates are within bounds
+        x_min = max(0, x_min)
+        y_min = max(0, y_min)
+        x_max = min(shape[1], x_max)
+        y_max = min(shape[0], y_max)
+        
+        # Draw the bounding box on the mask
+        mask[y_min:y_max, x_min:x_max] = 1
+        
+        return mask
