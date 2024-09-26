@@ -116,3 +116,10 @@ all_labels = np.array(all_labels)
 all_probs = np.array(all_probs)
 
 # Calculate AUC
+auc_score = roc_auc_score(all_labels, all_probs)
+print(f"AUC: {auc_score:.4f}")
+
+# Calculate Precision-Recall curve and AUPRC
+precision, recall, _ = precision_recall_curve(all_labels, all_probs)
+auprc_score = auc(recall, precision)
+print(f"AUPRC: {auprc_score:.4f}")
