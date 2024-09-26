@@ -16,13 +16,11 @@ from torchvision.utils import make_grid, save_image
 from matplotlib import rcParams
 import matplotlib.patches as patches
 from math import ceil
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, precision_recall_curve, auc
 
 from dataset.dataset import TrainAndValidateDataset
 from resnet import Resnet
 
-#################### Use the dataset saved in final-dataset next time.
-##### comment the code from dataset.py for preparring datasets.
 config = {
     'learning_rate': 0.0001,
     'num_epochs' : 20
@@ -30,9 +28,7 @@ config = {
 
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
-train_and_validate_dataset = TrainAndValidateDataset()
-label_data = train_and_validate_dataset.label_data
-label_data.head(5)
+train_and_validate_dataset = TrainAndValidateDataset(use_presaved=True)
 
 train_loader = train_and_validate_dataset.train_loader
 val_loader = train_and_validate_dataset.val_loader
@@ -87,7 +83,10 @@ for epoch in range(num_epochs):
     print(f'Epoch: {epoch + 1}/{num_epochs}, Val_Acc: {100 * correct / total}')
 
 
-torch.save(model.model.state_dict(), './rsna-dataset/model_inception_v3_24092024_dict.pth')
+current_time = datetime.now()
+current_time_str = current_time.strftime("%Y-%m-%d %H:%M:%S")
+
+torch.save(model.model.state_dict(), f'./rsna-dataset/model_inception_v3_{current_time_str}_dict.pth')
 print("Model and weights saved.")
 
 
@@ -105,8 +104,8 @@ with torch.no_grad():
         total += labels.size(0)
         correct += (labels == predicted).sum().item()
 
-        probs = nn.functional.softmax(predictions, dim=1)[:, 1] 
         # Collect labels and probabilities
+        probs = nn.functional.softmax(predictions, dim=1)[:, 1] 
         all_labels.extend(labels.cpu().numpy())
         all_probs.extend(probs.cpu().numpy())
 
@@ -117,6 +116,3 @@ all_labels = np.array(all_labels)
 all_probs = np.array(all_probs)
 
 # Calculate AUC
-auc_score = roc_auc_score(all_labels, all_probs)
-print(f"AUC: {auc_score:.4f}")
-

@@ -51,33 +51,38 @@ class Dataset(data.Dataset):
     
 
 class TrainAndValidateDataset:
-    def __init__(self, batch_size=64, test_size=0.1, val_size=0.1):
+    def __init__(self, batch_size=64, test_size=0.1, val_size=0.1, use_presaved=False):
         self.transform = transforms.Compose([
                         transforms.RandomHorizontalFlip(),
                         transforms.Resize(299),
                         transforms.ToTensor()])
-        label_data = pd.read_csv('./rsna-dataset/stage_2_train_labels.csv')
-        self.all_data = label_data
-        self.label_data = label_data.filter(columns)
+        if use_presaved:
+            self.train_dataset = torch.load('./rsna-dataset/presaved-dataset/train_dataset.pth')
+            self.val_dataset = torch.load('./rsna-dataset/presaved-dataset/val_dataset.pth')
+            self.test_dataset = torch.load('./rsna-dataset/presaved-dataset/test_dataset.pth')
+        else:
+            label_data = pd.read_csv('./rsna-dataset/stage_2_train_labels.csv')
+            self.all_data = label_data
+            self.label_data = label_data.filter(columns)
 
-        # self.train_labels, self.val_labels = train_test_split(self.label_data.values, test_size=test_size)
-        # Split data into train and remaining
-        self.train_labels, remaining_data = train_test_split(self.label_data.values, test_size=test_size + val_size, random_state=42)
-        
-        # Split remaining data into validation and test
-        self.val_labels, self.test_labels = train_test_split(remaining_data, test_size=test_size / (test_size + val_size), random_state=42)
-        
-        self.train_paths = [os.path.join(train_f, image[0]) for image in self.train_labels]
-        self.val_paths = [os.path.join(train_f, image[0]) for image in self.val_labels]
-        self.test_paths = [os.path.join(train_f, image[0]) for image in self.test_labels]
+            # self.train_labels, self.val_labels = train_test_split(self.label_data.values, test_size=test_size)
+            # Split data into train and remaining
+            self.train_labels, remaining_data = train_test_split(self.label_data.values, test_size=test_size + val_size, random_state=42)
+            
+            # Split remaining data into validation and test
+            self.val_labels, self.test_labels = train_test_split(remaining_data, test_size=test_size / (test_size + val_size), random_state=42)
+            
+            self.train_paths = [os.path.join(train_f, image[0]) for image in self.train_labels]
+            self.val_paths = [os.path.join(train_f, image[0]) for image in self.val_labels]
+            self.test_paths = [os.path.join(train_f, image[0]) for image in self.test_labels]
 
-        self.train_dataset = Dataset(self.train_paths, self.train_labels, transform=self.transform, all_data=self.all_data)
-        self.val_dataset = Dataset(self.val_paths, self.val_labels, transform=self.transform, all_data=self.all_data)
-        self.test_dataset = Dataset(self.test_paths, self.test_labels, transform=self.transform, all_data=self.all_data)
+            self.train_dataset = Dataset(self.train_paths, self.train_labels, transform=self.transform, all_data=self.all_data)
+            self.val_dataset = Dataset(self.val_paths, self.val_labels, transform=self.transform, all_data=self.all_data)
+            self.test_dataset = Dataset(self.test_paths, self.test_labels, transform=self.transform, all_data=self.all_data)
 
-        torch.save(self.train_dataset, './rsna-dataset/presaved-dataset/train_dataset.pth')
-        torch.save(self.val_dataset, './rsna-dataset/presaved-dataset/val_dataset.pth')
-        torch.save(self.test_dataset, './rsna-dataset/final-dataset/test_dataset.pth')
+            torch.save(self.train_dataset, './rsna-dataset/presaved-dataset/train_dataset.pth')
+            torch.save(self.val_dataset, './rsna-dataset/presaved-dataset/val_dataset.pth')
+            torch.save(self.test_dataset, './rsna-dataset/final-dataset/test_dataset.pth')
 
         self.train_loader = data.DataLoader(dataset=self.train_dataset, batch_size=batch_size, shuffle=True)
         self.val_loader = data.DataLoader(dataset=self.val_dataset, batch_size=batch_size, shuffle=False)

@@ -15,6 +15,7 @@ from sklearn.metrics import precision_recall_curve, average_precision_score
 from datetime import datetime
 from torch.utils import data
 
+from dataset.dataset import TrainAndValidateDataset
 from resnet_cams import ResnetCAMS
 from resnet import Resnet
 from utils import IOU, AUPRC
@@ -32,11 +33,10 @@ torch.cuda.empty_cache()
 batch_size = 64
 
 print("START: dataset prep")
-val_dataset = torch.load('./rsna-dataset/presaved-dataset/val_dataset.pth')
-val_loader = data.DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False)
+train_and_validate_dataset = TrainAndValidateDataset(use_presaved=True)
 
-test_dataset = torch.load('./rsna-dataset/presaved-dataset/test_dataset.pth')
-test_loader = data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
+val_loader = train_and_validate_dataset.val_loader
+test_loader = train_and_validate_dataset.test_loader
 print("DONE: dataset prep")
 
 target_class_idx = 1  # Target class
@@ -284,7 +284,7 @@ def compute_mean_iou_for_heatmaps(heatmap_iou_obj, heatmap_auprc_obj, heatmap_au
     return mean_iou
 
 mean_iou = compute_mean_iou_for_heatmaps(heatmap_iou_obj, heatmap_auprc_obj, heatmap_auc_obj)
-print("DONE: aggregated metrics calculation")
+print("DONE: aggregated metrics calculation \n\n\n")
 
 
 for heatmap_type, obj in mean_iou.items():

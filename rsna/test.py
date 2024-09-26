@@ -16,20 +16,15 @@ from torchvision.utils import make_grid, save_image
 from matplotlib import rcParams
 import matplotlib.patches as patches
 from math import ceil
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, precision_recall_curve, auc
 
-
+from dataset.dataset import TrainAndValidateDataset
 from resnet import Resnet
-
-
 
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
-batch_size=128
-
-test_dataset = torch.load('./rsna-dataset/presaved-dataset/test_dataset.pth')
-test_loader = data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
-
+train_and_validate_dataset = TrainAndValidateDataset(use_presaved=True)
+test_loader = train_and_validate_dataset.test_loader
 
 model = Resnet(device=device, path='./rsna-dataset/model_inception_v3_24092024_dict.pth')
 
@@ -47,8 +42,8 @@ with torch.no_grad():
         total += labels.size(0)
         correct += (labels == predicted).sum().item()
 
-        probs = nn.functional.softmax(predictions, dim=1)[:, 1] 
         # Collect labels and probabilities
+        probs = nn.functional.softmax(predictions, dim=1)[:, 1] 
         all_labels.extend(labels.cpu().numpy())
         all_probs.extend(probs.cpu().numpy())
 
@@ -62,3 +57,7 @@ all_probs = np.array(all_probs)
 auc_score = roc_auc_score(all_labels, all_probs)
 print(f"AUC: {auc_score:.4f}")
 
+# Calculate Precision-Recall curve and AUPRC
+precision, recall, _ = precision_recall_curve(all_labels, all_probs)
+auprc_score = auc(recall, precision)
+print(f"AUPRC: {auprc_score:.4f}")
