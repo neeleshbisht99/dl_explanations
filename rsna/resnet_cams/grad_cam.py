@@ -50,7 +50,8 @@ class GradCam:
         
         # Backward pass to get gradients
         model.zero_grad()
-        class_output.backward(retain_graph=True)
+        class_output.backward()
+        # class_output.backward(retain_graph=True) ## commented for the issue of high memory
 
         activations = save_features.activations.detach().cpu().numpy()
         gradients = save_features.gradients.detach().cpu().numpy()
@@ -58,6 +59,7 @@ class GradCam:
         # Remove hooks after usage
         save_features.remove()
 
+        del save_features
         return activations, gradients, output_probabilities
 
     @staticmethod
@@ -69,26 +71,33 @@ class GradCam:
         heatmap = np.mean(activation_, axis=1).squeeze()
         
         heatmap = np.maximum(heatmap, 0) # Apply ReLU
-        heatmap /= np.max(heatmap) # Normalize to [0, 1]
+        if np.max(heatmap) > 0:
+            heatmap /= np.max(heatmap) # Normalize to [0, 1]
+        del activation_
         return heatmap
 
     @staticmethod
     def compute(img_tensor, model, last_conv_layer_name, target_class_idx, ref_class_idx):
         # Get activations and gradients for target and reference class
         activations, target_class_gradients, target_class_output_probabilities = GradCam.get_activations_and_gradients(img_tensor, model, last_conv_layer_name, pred_index=target_class_idx)
-        _, ref_class_gradients, ref_class_output_probabilities = GradCam.get_activations_and_gradients(img_tensor, model, last_conv_layer_name, pred_index=ref_class_idx)
+        # _, ref_class_gradients, ref_class_output_probabilities = GradCam.get_activations_and_gradients(img_tensor, model, last_conv_layer_name, pred_index=ref_class_idx)
 
         # Compute gradient weights from the gradients
         target_class_weights = GradCam.compute_gradcam_weights(target_class_gradients)
-        ref_class_weights = GradCam.compute_gradcam_weights(ref_class_gradients)
+        # ref_class_weights = GradCam.compute_gradcam_weights(ref_class_gradients)
 
         # Compute the differential weights
-        diff_weights = target_class_weights - ref_class_weights
+        # diff_weights = target_class_weights - ref_class_weights
 
         # Generate class activation heatmap
-        diff_grad_cam_heatmap = GradCam.make_gradcam_heatmap(activations, diff_weights)
+        # diff_grad_cam_heatmap = GradCam.make_gradcam_heatmap(activations, diff_weights)
         grad_cam_heatmap = GradCam.make_gradcam_heatmap(activations, target_class_weights)
-        ref_class_heatmap = GradCam.make_gradcam_heatmap(activations, ref_class_weights)
+        # ref_class_heatmap = GradCam.make_gradcam_heatmap(activations, ref_class_weights)
 
+        del activations, target_class_gradients, target_class_weights
+        ## commented and done for the issue of high memory
+        ref_class_heatmap = grad_cam_heatmap
+        diff_grad_cam_heatmap = grad_cam_heatmap
+        ref_class_output_probabilities = target_class_output_probabilities
         # Return heatmaps for target class, reference class, and differential heatmap
         return grad_cam_heatmap, ref_class_heatmap, diff_grad_cam_heatmap, target_class_output_probabilities, ref_class_output_probabilities

@@ -1,6 +1,7 @@
 from torch.utils import data
 from pydicom import dcmread
 from PIL import Image
+import torch
 import torchvision
 import torchvision.transforms as transforms
 from sklearn.model_selection import train_test_split
@@ -73,6 +74,10 @@ class TrainAndValidateDataset:
         self.train_dataset = Dataset(self.train_paths, self.train_labels, transform=self.transform, all_data=self.all_data)
         self.val_dataset = Dataset(self.val_paths, self.val_labels, transform=self.transform, all_data=self.all_data)
         self.test_dataset = Dataset(self.test_paths, self.test_labels, transform=self.transform, all_data=self.all_data)
+
+        torch.save(self.train_dataset, './rsna-dataset/presaved-dataset/train_dataset.pth')
+        torch.save(self.val_dataset, './rsna-dataset/presaved-dataset/val_dataset.pth')
+        torch.save(self.test_dataset, './rsna-dataset/final-dataset/test_dataset.pth')
 
         self.train_loader = data.DataLoader(dataset=self.train_dataset, batch_size=batch_size, shuffle=True)
         self.val_loader = data.DataLoader(dataset=self.val_dataset, batch_size=batch_size, shuffle=False)

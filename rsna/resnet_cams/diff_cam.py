@@ -22,7 +22,7 @@ class FeatureExtractor:
                 hook = layer.register_forward_hook(self.hook_fn)
                 self.hooks.append(hook)
 
-        embedding_hook = self.model.model.fc.register_forward_hook(self._embedding_hook_fn)
+        embedding_hook = self.model.fc.register_forward_hook(self._embedding_hook_fn)
         self.hooks.append(embedding_hook)
 
     def get_features(self):
@@ -70,7 +70,8 @@ class DiffCAM:
         heatmap = heatmap.reshape(h, w)
         # Normalize the heatmap
         heatmap = heatmap - np.min(heatmap)
-        heatmap = heatmap / np.max(heatmap)
+        if np.max(heatmap) > 0:
+            heatmap = heatmap / np.max(heatmap)
         return heatmap # The heatmap should already be in (height, width) format
 
     @staticmethod

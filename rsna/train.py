@@ -16,11 +16,13 @@ from torchvision.utils import make_grid, save_image
 from matplotlib import rcParams
 import matplotlib.patches as patches
 from math import ceil
+from sklearn.metrics import roc_auc_score
 
 from dataset.dataset import TrainAndValidateDataset
 from resnet import Resnet
 
-#### FIND AUC NEXT to compare with the paper
+#################### Use the dataset saved in final-dataset next time.
+##### comment the code from dataset.py for preparring datasets.
 config = {
     'learning_rate': 0.0001,
     'num_epochs' : 20
@@ -40,7 +42,7 @@ model = Resnet(device=device)
 
 criterion = nn.CrossEntropyLoss()
 # Observe that all parameters are being optimized
-optimizer = torch.optim.SGD(model.parameters(), lr=config['learning_rate'], momentum=0.9, weight_decay=0.00001)
+optimizer = torch.optim.SGD(model.model.parameters(), lr=config['learning_rate'], momentum=0.9, weight_decay=0.00001)
 # Decay LR by a factor of 0.1 every 7 epochs
 exp_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 
@@ -50,7 +52,7 @@ num_epochs = config['num_epochs']
 total_step = len(train_loader)
 for epoch in range(num_epochs):
     # Training step
-    model.train()
+    model.model.train()
     for i, (images, labels, _) in tqdm(enumerate(train_loader)):
         images = images.to(device)
         labels = labels.to(device)
@@ -73,31 +75,48 @@ for epoch in range(num_epochs):
     # Validation step
     correct = 0
     total = 0
-    model.eval()
-    for images, labels, _ in tqdm(val_loader):
-        images = images.to(device)
-        labels = labels.to(device)
-        predictions = model(images)
-        _, predicted = torch.max(predictions, 1)
-        total += labels.size(0)
-        correct += (labels == predicted).sum()
+    model.model.eval()
+    with torch.no_grad():
+        for images, labels, _ in tqdm(val_loader):
+            images = images.to(device)
+            labels = labels.to(device)
+            predictions = model(images)
+            _, predicted = torch.max(predictions.data, 1)
+            total += labels.size(0)
+            correct += (labels == predicted).sum().item()
     print(f'Epoch: {epoch + 1}/{num_epochs}, Val_Acc: {100 * correct / total}')
 
 
+torch.save(model.model.state_dict(), './rsna-dataset/model_inception_v3_24092024_dict.pth')
+print("Model and weights saved.")
 
-model.eval()
+
+model.model.eval()
 correct = 0
 total = 0
-for images, labels, _ in tqdm(test_loader):
-    images = images.to(device)
-    labels = labels.to(device)
-    predictions = model(images)
-    _, predicted = torch.max(predictions, 1)
-    total += labels.size(0)
-    correct += (labels == predicted).sum()
-print(f'Val_Acc: {100 * correct / total}')
+all_labels = []
+all_probs = []
+with torch.no_grad():
+    for images, labels, _ in tqdm(test_loader):
+        images = images.to(device)
+        labels = labels.to(device)
+        predictions = model(images)
+        _, predicted = torch.max(predictions.data, 1)
+        total += labels.size(0)
+        correct += (labels == predicted).sum().item()
+
+        probs = nn.functional.softmax(predictions, dim=1)[:, 1] 
+        # Collect labels and probabilities
+        all_labels.extend(labels.cpu().numpy())
+        all_probs.extend(probs.cpu().numpy())
 
 
-torch.save(model, './rsna-dataset/model_inception_v3_17092024.pth')
-print("Model and weights saved.")
+print(f'Test_Acc: {100 * correct / total}')
+
+all_labels = np.array(all_labels)
+all_probs = np.array(all_probs)
+
+# Calculate AUC
+auc_score = roc_auc_score(all_labels, all_probs)
+print(f"AUC: {auc_score:.4f}")
 

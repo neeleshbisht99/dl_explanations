@@ -53,7 +53,8 @@ class CounterFactual:
         
         # Normalize heatmap
         heatmap = heatmap - np.min(heatmap)
-        heatmap = heatmap / np.max(heatmap)
+        if np.max(heatmap) > 0:
+            heatmap = heatmap / np.max(heatmap)
         return heatmap
 
     @staticmethod
