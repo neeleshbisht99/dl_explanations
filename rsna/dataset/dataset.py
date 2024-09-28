@@ -52,9 +52,17 @@ class Dataset(data.Dataset):
 
 class TrainAndValidateDataset:
     def __init__(self, batch_size=64, test_size=0.1, val_size=0.1, use_presaved=False):
-        self.transform = transforms.Compose([
+        self.train_transform = transforms.Compose([
                         transforms.RandomHorizontalFlip(),
+                        transforms.RandomRotation(13),
+                        transforms.ColorJitter(brightness=0.1, contrast=0.1),
                         transforms.Resize(299),
+                        transforms.CenterCrop(299),
+                        transforms.ToTensor()])
+
+        self.test_transform = transforms.Compose([
+                        transforms.Resize(299),
+                        transforms.CenterCrop(299),
                         transforms.ToTensor()])
         if use_presaved:
             self.train_dataset = torch.load('./rsna-dataset/presaved-dataset/train_dataset.pth')
@@ -76,13 +84,13 @@ class TrainAndValidateDataset:
             self.val_paths = [os.path.join(train_f, image[0]) for image in self.val_labels]
             self.test_paths = [os.path.join(train_f, image[0]) for image in self.test_labels]
 
-            self.train_dataset = Dataset(self.train_paths, self.train_labels, transform=self.transform, all_data=self.all_data)
-            self.val_dataset = Dataset(self.val_paths, self.val_labels, transform=self.transform, all_data=self.all_data)
-            self.test_dataset = Dataset(self.test_paths, self.test_labels, transform=self.transform, all_data=self.all_data)
+            self.train_dataset = Dataset(self.train_paths, self.train_labels, transform=self.train_transform, all_data=self.all_data)
+            self.val_dataset = Dataset(self.val_paths, self.val_labels, transform=self.test_transform, all_data=self.all_data)
+            self.test_dataset = Dataset(self.test_paths, self.test_labels, transform=self.test_transform, all_data=self.all_data)
 
             torch.save(self.train_dataset, './rsna-dataset/presaved-dataset/train_dataset.pth')
             torch.save(self.val_dataset, './rsna-dataset/presaved-dataset/val_dataset.pth')
-            torch.save(self.test_dataset, './rsna-dataset/final-dataset/test_dataset.pth')
+            torch.save(self.test_dataset, './rsna-dataset/presaved-dataset/test_dataset.pth')
 
         self.train_loader = data.DataLoader(dataset=self.train_dataset, batch_size=batch_size, shuffle=True)
         self.val_loader = data.DataLoader(dataset=self.val_dataset, batch_size=batch_size, shuffle=False)

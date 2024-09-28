@@ -17,13 +17,15 @@ from matplotlib import rcParams
 import matplotlib.patches as patches
 from math import ceil
 from sklearn.metrics import roc_auc_score, precision_recall_curve, auc
+from datetime import datetime
 
 from dataset.dataset import TrainAndValidateDataset
 from resnet import Resnet
 
 config = {
     'learning_rate': 0.0001,
-    'num_epochs' : 20
+    'num_epochs' : 50, #HACK change to 30
+    'patience' : 4
 }
 
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
@@ -44,11 +46,17 @@ exp_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma
 
 
 num_epochs = config['num_epochs']
+
+# Early stopping parameters
+best_auc = 0
+patience = config['patience']
+patience_counter = 0
+
 # Train the model
-total_step = len(train_loader)
 for epoch in range(num_epochs):
     # Training step
     model.model.train()
+    train_loss = 0.0
     for i, (images, labels, _) in tqdm(enumerate(train_loader)):
         images = images.to(device)
         labels = labels.to(device)
@@ -62,33 +70,60 @@ for epoch in range(num_epochs):
         loss.backward()
         optimizer.step()
 
-        if (i + 1) % 2000 == 0:
-            print("Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}"
-                    .format(epoch + 1, num_epochs, i + 1, total_step, loss.item()))
+        train_loss += loss.item()
     
     exp_lr_scheduler.step()
 
     # Validation step
     correct = 0
     total = 0
+    val_loss = 0.0
+    all_labels = []
+    all_probs = []
     model.model.eval()
     with torch.no_grad():
         for images, labels, _ in tqdm(val_loader):
             images = images.to(device)
             labels = labels.to(device)
             predictions = model(images)
+
+            # Compute validation loss
+            loss = criterion(predictions, labels)
+            val_loss += loss.item()
+
             _, predicted = torch.max(predictions.data, 1)
             total += labels.size(0)
             correct += (labels == predicted).sum().item()
-    print(f'Epoch: {epoch + 1}/{num_epochs}, Val_Acc: {100 * correct / total}')
 
+            probs = torch.softmax(predictions, dim=1)[:, 1]
+            all_labels.extend(labels.cpu().numpy())
+            all_probs.extend(probs.cpu().numpy())
+    
+    # Compute validation accuracy and AUC
+    val_acc = 100 * correct / total
+    all_labels = np.array(all_labels)
+    all_probs = np.array(all_probs)
+    val_auc = roc_auc_score(all_labels, all_probs)
 
-current_time = datetime.now()
-current_time_str = current_time.strftime("%Y-%m-%d %H:%M:%S")
+    print(f'Epoch: {epoch + 1}/{num_epochs}, Train Loss: {train_loss / len(train_loader):.4f}, '
+          f'Val Loss: {val_loss / len(val_loader):.4f}, Val Acc: {val_acc:.2f}%, Val AUC: {val_auc:.4f}')
 
-torch.save(model.model.state_dict(), f'./rsna-dataset/model_inception_v3_{current_time_str}_dict.pth')
+    if epoch >= 35:
+        if val_auc > best_auc:
+            best_auc = val_auc
+            patience_counter = 0
+            current_time = datetime.now()
+            current_time_str = current_time.strftime("%Y-%m-%d %H:%M:%S")
+            torch.save(model.model.state_dict(), f'./rsna-dataset/model_inception_v3_{current_time_str}_dict.pth')
+            print("Best model saved!")
+        else:
+            patience_counter += 1
+
+        if patience_counter >= patience:
+            print("Early stopping triggered. Training stopped.")
+            break
+
 print("Model and weights saved.")
-
 
 model.model.eval()
 correct = 0
@@ -123,3 +158,5 @@ print(f"AUC: {auc_score:.4f}")
 precision, recall, _ = precision_recall_curve(all_labels, all_probs)
 auprc_score = auc(recall, precision)
 print(f"AUPRC: {auprc_score:.4f}")
+
+# nohup python3 train.py > train.out 2>&1 &
