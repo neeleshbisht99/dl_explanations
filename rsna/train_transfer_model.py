@@ -23,20 +23,20 @@ from dataset.dataset import TrainAndValidateDataset
 from resnet import Resnet
 # the latest dataset
 config = {
-    'learning_rate': 0.00008,
-    'num_epochs' : 50, #HACK change to 30
+    'learning_rate': 0.0001,
+    'num_epochs' : 30,
     'patience' : 4
 }
 
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
-train_and_validate_dataset = TrainAndValidateDataset()
+train_and_validate_dataset = TrainAndValidateDataset(use_presaved=True)
 
 train_loader = train_and_validate_dataset.train_loader
 val_loader = train_and_validate_dataset.val_loader
 test_loader = train_and_validate_dataset.test_loader
 
-model = Resnet(device=device)
+model = Resnet(device=device, path="/shared/home/v_neelesh_bisht/local_scratch/dl_explanations/rsna/rsna-dataset/transfer_model/inception_1_11.pth")
 
 criterion = nn.CrossEntropyLoss()
 # Observe that all parameters are being optimized
@@ -108,13 +108,13 @@ for epoch in range(num_epochs):
     print(f'Epoch: {epoch + 1}/{num_epochs}, Train Loss: {train_loss / len(train_loader):.4f}, '
           f'Val Loss: {val_loss / len(val_loader):.4f}, Val Acc: {val_acc:.2f}%, Val AUC: {val_auc:.4f}')
 
-    if epoch >= 20:
+    if epoch >= 18:
         if val_auc > best_auc:
             best_auc = val_auc
             patience_counter = 0
             current_time = datetime.now()
             current_time_str = current_time.strftime("%Y-%m-%d %H:%M:%S")
-            torch.save(model.model.state_dict(), f'./rsna-dataset/model_inception_v3_{current_time_str}_dict_1.pth')
+            torch.save(model.model.state_dict(), f'./rsna-dataset/model_inception_v3_{current_time_str}_transfer_model.pth')
             print("Best model saved!")
         else:
             patience_counter += 1
@@ -159,4 +159,8 @@ precision, recall, _ = precision_recall_curve(all_labels, all_probs)
 auprc_score = auc(recall, precision)
 print(f"AUPRC: {auprc_score:.4f}")
 
-# nohup python3 train.py > train.out 2>&1 &
+# nohup python3 train_transfer_model.py > train_transfer_model.out 2>&1 &
+
+# TODO Next: This seesm to be related to pickle problem, use the inception_1_11.py file for pickling, else find other to fix this up
+# TODO: side by side start writing code the segmentaion model training
+# TODO: https://www.perplexity.ai/search/possible-ways-of-transferring-EKgfxYGlS4u3ejRXYnjyHg

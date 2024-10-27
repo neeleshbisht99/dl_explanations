@@ -25,12 +25,9 @@ Orig_img_size = 1024
 img_size = 299
 # last conv_block : model.Mixed_7c
 
-
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 torch.cuda.empty_cache()
 
-
-batch_size = 64
 
 print("START: dataset prep")
 train_and_validate_dataset = TrainAndValidateDataset(use_presaved=True)
@@ -44,7 +41,7 @@ ref_class_idx = 0  # Reference class
 
 
 # Load the model weights
-resnet_model = Resnet(device=device, path='./rsna-dataset/model_inception_v3_24092024_dict.pth')
+resnet_model = Resnet(device=device, path='./rsna-dataset/model_inception_v3_2024-09-29 10:53:55_dict_2_exp_4.pth')
 print("DONE: model prep")
 
 print("START: validation")
@@ -298,3 +295,5 @@ for heatmap_type, obj in mean_iou.items():
     print(f"Correlation Score for {heatmap_type}: ", correlation_score)
     print('\n')
 
+
+# nohup python3 all_cams.py > all_cams.out 2>&1 &

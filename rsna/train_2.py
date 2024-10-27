@@ -23,14 +23,14 @@ from dataset.dataset import TrainAndValidateDataset
 from resnet import Resnet
 # the latest dataset
 config = {
-    'learning_rate': 0.00008,
-    'num_epochs' : 50, #HACK change to 30
+    'learning_rate': 0.0001,
+    'num_epochs' : 50,
     'patience' : 4
 }
 
-device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu') #change HACK
 
-train_and_validate_dataset = TrainAndValidateDataset()
+train_and_validate_dataset = TrainAndValidateDataset(use_presaved=True) #change HACK
 
 train_loader = train_and_validate_dataset.train_loader
 val_loader = train_and_validate_dataset.val_loader
@@ -114,7 +114,7 @@ for epoch in range(num_epochs):
             patience_counter = 0
             current_time = datetime.now()
             current_time_str = current_time.strftime("%Y-%m-%d %H:%M:%S")
-            torch.save(model.model.state_dict(), f'./rsna-dataset/model_inception_v3_{current_time_str}_dict_1.pth')
+            torch.save(model.model.state_dict(), f'./rsna-dataset/model_inception_v3_{current_time_str}_dict_2.pth')
             print("Best model saved!")
         else:
             patience_counter += 1
@@ -159,4 +159,4 @@ precision, recall, _ = precision_recall_curve(all_labels, all_probs)
 auprc_score = auc(recall, precision)
 print(f"AUPRC: {auprc_score:.4f}")
 
-# nohup python3 train.py > train.out 2>&1 &
+# nohup python3 train_2.py > train_2.out 2>&1 &

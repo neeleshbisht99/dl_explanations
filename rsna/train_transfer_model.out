@@ -1,0 +1,13 @@
+nohup: ignoring input
+Traceback (most recent call last):
+  File "/local/scratch/v_neelesh_bisht/dl_explanations/rsna/train_transfer_model.py", line 39, in <module>
+    model = Resnet(device=device, path="/shared/home/v_neelesh_bisht/local_scratch/dl_explanations/rsna/rsna-dataset/transfer_model/inception_1_11.pth")
+  File "/local/scratch/v_neelesh_bisht/dl_explanations/rsna/resnet.py", line 15, in __init__
+    model.load_state_dict(torch.load(path))
+  File "/local/scratch/v_neelesh_bisht/mask_env/lib/python3.10/site-packages/torch/serialization.py", line 1025, in load
+    return _load(opened_zipfile,
+  File "/local/scratch/v_neelesh_bisht/mask_env/lib/python3.10/site-packages/torch/serialization.py", line 1446, in _load
+    result = unpickler.load()
+  File "/local/scratch/v_neelesh_bisht/mask_env/lib/python3.10/site-packages/torch/serialization.py", line 1439, in find_class
+    return super().find_class(mod_name, name)
+ModuleNotFoundError: No module named 'MainModel'
