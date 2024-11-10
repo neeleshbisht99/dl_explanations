@@ -297,3 +297,37 @@ for heatmap_type, obj in mean_iou.items():
 
 
 # nohup python3 all_cams.py > all_cams.out 2>&1 &
+# IOU for grad_cam_heatmap:  14.631266004040105 %
+# AUPRC for grad_cam_heatmap:  0.25417670694921096
+# AUC for grad_cam_heatmap:  0.6698456741307554
+# Correlation Score for grad_cam_heatmap:  0.36770593407769203
+
+
+# IOU for diff_grad_cam_heatmap:  14.631266004040105 %
+# AUPRC for diff_grad_cam_heatmap:  0.25417670694921096
+# AUC for diff_grad_cam_heatmap:  0.6698456741307554
+# Correlation Score for diff_grad_cam_heatmap:  0.36770593407769203
+
+
+# IOU for diff_cam_heatmap:  10.504465988365013 %
+# AUPRC for diff_cam_heatmap:  0.21111955109829045
+# AUC for diff_cam_heatmap:  0.7352333339608516
+# Correlation Score for diff_cam_heatmap:  0.19769696704967796
+
+
+# IOU for counter_factual_heatmap:  15.524804061860129 %
+# AUPRC for counter_factual_heatmap:  0.2685246133919347
+# AUC for counter_factual_heatmap:  0.7428857828808961
+# Correlation Score for counter_factual_heatmap:  0.33232702981607076
+
+
+# IOU for torch_cam_grad_cam_heatmap:  14.631539254885832 %
+# AUPRC for torch_cam_grad_cam_heatmap:  0.25417675949192564
+# AUC for torch_cam_grad_cam_heatmap:  0.6698456991556991
+# Correlation Score for torch_cam_grad_cam_heatmap:  0.3676726141965919
+
+
+# IOU for torch_cam_grad_campp_heatmap:  15.059562594887865 %
+# AUPRC for torch_cam_grad_campp_heatmap:  0.2697408981634101
+# AUC for torch_cam_grad_campp_heatmap:  0.7841433188182938
+# Correlation Score for torch_cam_grad_campp_heatmap:  0.2156995385124151

@@ -7,3 +7,7 @@ models/archive/
 __pycache__/
 
 rsna/rsna-dataset/
+
+rnsa/output/
+
+/shared/home/v_neelesh_bisht/local_scratch/dl_explanations/rsna/output

@@ -1,11 +1,11 @@
 import torch.nn as nn
 import torchvision
+from torchvision.models import Inception_V3_Weights
 import torch
 
-class Inceptionv3(nn.Module):
+class Inceptionv3():
     def __init__(self, device = 0, path=None):
-        super(Inceptionv3, self).__init__()
-        model = torchvision.models.inception_v3(weights='IMAGENET1K_V1')
+        model = torchvision.models.inception_v3(weights=Inception_V3_Weights.IMAGENET1K_V1)
         model.aux_logits = False 
         num_ftrs = model.fc.in_features
         # Here the size of each output sample is set to 2.
