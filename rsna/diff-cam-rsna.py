@@ -8,6 +8,7 @@
 """
 
 import os
+import json
 import numpy as np
 import torch
 import torch.nn as nn
@@ -61,6 +62,15 @@ cls_model = Inceptionv3(device=device, path='./rsna-dataset/model_inception_v3_2
 cls_model.model.eval()
 print("DONE: model prep")
 
+def write_to_json_file(filename, data):
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    
+    # Write data to the JSON file
+    with open(filename, 'w') as json_file:
+        json.dump(data, json_file, indent=4)
+    print(f"Data written to {filename}")
+    
 
 # In[3]:
 # [3]
@@ -282,6 +292,9 @@ Following are the algos for calculating IOU, AUPRC and AUC.
 Besides a class FeatureExtractor is defined that registers hook on a particular layer in the model etc
 """
 
+Orig_img_size = 1000
+img_size = 299
+
 import cv2
 import torch
 import glob as glob
@@ -345,8 +358,6 @@ class FeatureExtractor:
 
 # In[8]:
 # [8]
-Orig_img_size = 1000
-img_size = 299
 
 cls_feature_arr_0 = cls_feature_arr[ref_indices,:]  # used in diff-cam calculation
 cls_feature_arr_1 = cls_feature_arr[target_indices,:]  # used in diff-cam calculation
@@ -376,6 +387,7 @@ def DiffCAM_v3(feature_conv, version = 'w-diff'):
 # In[9]:
 # [9]
 
+scores = []
 results = []
 model = init_model()
 model.eval()
@@ -390,9 +402,17 @@ auprc_sgcam = []
 auprc_scorecam = []
 auprc_diffcam = []
 
+for method in x_methods:
+    method['iou'] = []
+    method['auprc']= []
+
 i = -1
-#example_ids = [4, 34, 41, 16,23,  48, 2, 3, 6, 15,24, 100,101,102,103,104,105,106,107,108,109,110]
-example_ids = [x for x in range(len(demo_set))]
+# example_ids = [ 682, 834, 426, 789, 293, 684, 180, 391, 462, 193, 198, 55, 79, 389, 813, 873, 189, 146, 194, 638, 853, 170, 134, 13, 99, 862, 636, 698, 59, 48, 44, 291, 694, 298, 712, 94, 132, 866, 280, 251, 930, 469, 623, 950, 178, 182, 66, 855, 799, 396, 420, 630, 73, 769, 164, 257, 49, 152, 58, 612, 375, 57, 61, 294, 566, 835, 701, 885, 284, 717, 911, 104, 115, 514, 250, 358, 765, 281, 716, 579, 648, 276, 501, 97, 205, 845, 218, 620, 925, 616, 288, 500, 262, 875, 610, 725, 708, 332, 801, 226, 919, 528, 665, 37, 590, 900, 195, 641, 32, 745, 247, 842, 129, 6, 828, 200, 34, 266, 542, 915, 841, 593, 133, 596, 779, 897, 615, 892, 285, 859, 103, 627, 406, 481, 839, 487, 105, 805, 668, 727, 811, 397, 724, 793, 629, 702, 618, 942, 53, 570, 552, 329, 639, 149, 234, 599, 410, 939, 465, 371, 644, 416, 240, 474, 196, 685, 944, 904, 142, 790, 488, 449, 733, 874, 318, 605, 387, 401, 533, 675, 15, 313, 108, 0, 394, 498, 527, 119, 404, 441, 372, 673, 241, 282, 816, 124, 891, 89, 755, 419, 511, 696, 308, 96, 672, 837, 110, 183, 951, 459, 270, 876, 635, 463, 187, 797, 532, 176, 304, 883, 661, 154, 165, 95, 41, 824]
+example_ids = [748, 711, 201, 802, 832, 274, 319, 101, 369, 424, 362, 376, 677, 407, 148, 373, 190, 309, 931, 699, 926, 471, 678, 631, 303, 645, 766, 738, 948, 913, 786, 168, 493, 455, 774, 398, 884, 697, 666, 63, 414, 747, 928, 67, 121, 530, 723, 279, 212, 305, 361, 144, 393, 520, 422, 418, 126, 12, 658, 548, 458, 238, 277, 863, 338, 808, 448, 364, 720, 221, 223, 356, 912, 480, 444, 85, 519, 256, 922, 705, 302, 953, 823, 197, 42, 545, 497, 917, 806, 244, 36, 895, 28, 518, 952, 907, 568, 109, 333, 937, 544, 135, 910, 561, 822, 355, 54, 122, 700, 2, 113, 399, 778, 537, 704, 585, 794, 370, 719, 505, 767, 534, 607, 546, 316, 693, 512, 340, 19, 70, 815, 93, 924, 84, 921, 40, 466, 567, 709, 494, 451, 646, 829, 626, 902, 186, 269, 267, 575, 613, 622, 572, 571, 777, 565, 870, 890, 795, 76, 286, 150, 255, 82, 125, 896, 637, 357, 72, 827, 450, 938, 8, 390, 429, 52, 3, 713, 349, 258, 601, 242, 120, 603, 90, 336, 954, 236, 840, 228, 25, 137, 10, 62, 752, 325, 594, 222, 158, 803, 654, 814, 1, 166, 230, 131, 949, 929, 87, 71, 321, 368, 188, 116, 695, 750, 621, 405, 550, 177, 484, 826, 123, 16, 159, 541, 762, 690, 932, 446, 852, 821, 33, 297, 260, 365, 326, 27, 817, 382, 764, 478, 860, 235, 460, 237, 392, 854, 507, 770, 453, 261, 553, 299, 323, 680, 760, 219, 227, 265, 315, 558, 584, 682, 834, 426, 789, 293, 684, 180, 391, 462, 193, 198, 55, 79, 389, 813, 873, 189, 146, 194, 638, 853, 170, 134, 13, 99, 862, 636, 698, 59, 48, 44, 291, 694, 298, 712, 94, 132, 866, 280, 251, 930, 469, 623, 950, 178, 182, 66, 855, 799, 396, 420, 630, 73, 769, 164, 257, 49, 152, 58, 612, 375, 57, 61, 294, 566, 835, 701, 885, 284, 717, 911, 104, 115, 514, 250, 358, 765, 281, 716, 579, 648, 276, 501, 97, 205, 845, 218, 620, 925, 616, 288, 500, 262, 875, 610, 725, 708, 332, 801, 226, 919, 528, 665, 37, 590, 900, 195, 641, 32, 745, 247, 842, 129, 6, 828, 200, 34, 266, 542, 915, 841, 593, 133, 596, 779, 897, 615, 892, 285, 859, 103, 627, 406, 481, 839, 487, 105, 805, 668, 727, 811, 397, 724, 793, 629, 702, 618, 942, 53, 570, 552, 329, 639, 149, 234, 599, 410, 939, 465, 371, 644, 416, 240, 474, 196, 685, 944, 904, 142, 790, 488, 449, 733, 874, 318, 605, 387, 401, 533, 675, 15, 313, 108, 0, 394, 498, 527, 119, 404, 441, 372, 673, 241, 282, 816, 124, 891, 89, 755, 419, 511, 696, 308, 96, 672, 837, 110, 183, 951, 459, 270, 876, 635, 463, 187, 797, 532, 176, 304, 883, 661, 154, 165, 95, 41, 824]
+
+example_ids.sort()
+# example_ids = [x for x in range(len(demo_set))]
+count = 0
 for i in example_ids:
     image, target_id, bbox_coords = demo_set[i]
     if target_id != 1:
@@ -406,13 +426,14 @@ for i in example_ids:
 
     # Obtain feature maps from the last convolutional layer
     feature_conv = feature_extractor.get_features()[-1].cpu().detach().numpy()
-
+    score_obj = {"index": i}
     for method in x_methods:
         iou = cal_iou(bbox_coords, method['results'][i])
         method['iou'].append(iou)
 
         auprc = cal_auprc(bbox_coords, method['results'][i])
         method['auprc'].append(auprc)
+        score_obj[method['title']] = {'iou': iou, 'auprc': auprc}
 
     N = 5
     if True:
@@ -437,19 +458,25 @@ for i in example_ids:
 
             iou_diffcam.append(iou)
             auprc_diffcam.append(auprc)
+            score_obj['Diff-CAM'] = {'iou': iou, 'auprc': auprc}
 
     feature_extractor.remove_hooks()
+    scores.append(score_obj)
 
-    if i%50 == 0:
+    if count%50 == 0 or count+1 >= len(example_ids):
         avg_auprc_str = ''
         avg_iou_str = ''
         for method in x_methods:
             avg_auprc_str += f'{method["title"]}: {np.mean(method["auprc"])}, '
             avg_iou_str += f'{method["title"]}: {np.mean(method["iou"])}, '
 
-        print('auprc', i, avg_auprc_str, 'Diff-CAM: ', np.mean(auprc_diffcam))
-        print('iou', i, avg_iou_str, 'Diff-CAM: ', np.mean(iou_diffcam))
+        print('auprc', count, avg_auprc_str, 'Diff-CAM: ', np.mean(auprc_diffcam))
+        print('iou', count, avg_iou_str, 'Diff-CAM: ', np.mean(iou_diffcam))
+    count+=1
 
+write_to_json_file("/shared/home/v_neelesh_bisht/local_scratch/dl_explanations/rsna/scores.json", scores)
+
+### before removal of hard examples
 # auprc 0 Grad-CAM: 0.8072348517914129, Smooth Grad-CAM++: 0.16709032554442166, Score-CAM: 0.8285882905283114, Layer-CAM: 0.8143598058950382, XGrad-CAM: 0.8072348517914129,  Diff-CAM:  0.8543154337046005
 # iou 0 Grad-CAM: 0.5742155893194282, Smooth Grad-CAM++: 0.0010576565760512249, Score-CAM: 0.5905168498501226, Layer-CAM: 0.5779039380012616, XGrad-CAM: 0.5742155893194282,  Diff-CAM:  0.6184490248636658
 # auprc 50 Grad-CAM: 0.26372263126189954, Smooth Grad-CAM++: 0.10106938652065262, Score-CAM: 0.24348546717957295, Layer-CAM: 0.26196656542184193, XGrad-CAM: 0.263722677908879,  Diff-CAM:  0.31652160722609546
@@ -492,6 +519,29 @@ for i in example_ids:
 # iou 950 Grad-CAM: 0.15544801695887334, Smooth Grad-CAM++: 0.029173560017907874, Score-CAM: 0.13641212144460615, Layer-CAM: 0.14727539350061497, XGrad-CAM: 0.15544829964403178,  Diff-CAM:  0.17338003655541714
 
 # %%
+### after removal of hard examples
+# auprc 0 Grad-CAM: 0.8072348517914129, Smooth Grad-CAM++: 0.16709032554442166, Score-CAM: 0.8285882905283114, Layer-CAM: 0.8143598058950382, XGrad-CAM: 0.8072348517914129,  Diff-CAM:  0.8543154337046005
+# iou 0 Grad-CAM: 0.5742155893194282, Smooth Grad-CAM++: 0.0010576565760512249, Score-CAM: 0.5905168498501226, Layer-CAM: 0.5779039380012616, XGrad-CAM: 0.5742155893194282,  Diff-CAM:  0.6184490248636658
+# auprc 50 Grad-CAM: 0.43311195512040285, Smooth Grad-CAM++: 0.11281276574232671, Score-CAM: 0.3184987339632798, Layer-CAM: 0.3571647147274782, XGrad-CAM: 0.433112016692875,  Diff-CAM:  0.4702349364729874
+# iou 50 Grad-CAM: 0.28423829756040103, Smooth Grad-CAM++: 0.03678809079739838, Score-CAM: 0.17955528891162945, Layer-CAM: 0.20699008968540306, XGrad-CAM: 0.28423829756040103,  Diff-CAM:  0.3021026421876643
+# auprc 100 Grad-CAM: 0.47531484917149475, Smooth Grad-CAM++: 0.10996612414139795, Score-CAM: 0.3431055506218701, Layer-CAM: 0.39054887356683887, XGrad-CAM: 0.47531499637784214,  Diff-CAM:  0.472123210238727
+# iou 100 Grad-CAM: 0.31089783946243005, Smooth Grad-CAM++: 0.029885218900648217, Score-CAM: 0.20324117993417862, Layer-CAM: 0.23976864162551723, XGrad-CAM: 0.3108982331345254,  Diff-CAM:  0.30835449931440506
+# auprc 150 Grad-CAM: 0.4724471517038634, Smooth Grad-CAM++: 0.1183326295789919, Score-CAM: 0.3204124043320113, Layer-CAM: 0.36589884341177653, XGrad-CAM: 0.4724472488563878,  Diff-CAM:  0.4701053405099895
+# iou 150 Grad-CAM: 0.30848213653416623, Smooth Grad-CAM++: 0.0360236770160209, Score-CAM: 0.18488161136621845, Layer-CAM: 0.22088406284958886, XGrad-CAM: 0.3084817155793174,  Diff-CAM:  0.3036705553374746
+# auprc 200 Grad-CAM: 0.46143883115618733, Smooth Grad-CAM++: 0.12377698644795121, Score-CAM: 0.31111390566516406, Layer-CAM: 0.3518928963933809, XGrad-CAM: 0.46143889581132197,  Diff-CAM:  0.4583942286211084
+# iou 200 Grad-CAM: 0.2993955000626384, Smooth Grad-CAM++: 0.03922702797376585, Score-CAM: 0.17548289146902127, Layer-CAM: 0.2092087957675717, XGrad-CAM: 0.29939518382292607,  Diff-CAM:  0.29192951362476866
+# auprc 250 Grad-CAM: 0.4641546766584072, Smooth Grad-CAM++: 0.12341841013652805, Score-CAM: 0.31402312976719726, Layer-CAM: 0.3515681060720065, XGrad-CAM: 0.4641547297975662,  Diff-CAM:  0.45358043578148066
+# iou 250 Grad-CAM: 0.298440153592308, Smooth Grad-CAM++: 0.038909177918699855, Score-CAM: 0.17846020208808583, Layer-CAM: 0.20926164786127252, XGrad-CAM: 0.2984422923245307,  Diff-CAM:  0.28629932989292534
+# auprc 300 Grad-CAM: 0.4602173785203142, Smooth Grad-CAM++: 0.1252121218794973, Score-CAM: 0.31802907885854037, Layer-CAM: 0.35347862475830377, XGrad-CAM: 0.4602174117849817,  Diff-CAM:  0.4570760916269656
+# iou 300 Grad-CAM: 0.29473120099402184, Smooth Grad-CAM++: 0.040826308245826164, Score-CAM: 0.17952557188275547, Layer-CAM: 0.2089240761023419, XGrad-CAM: 0.2947320941288581,  Diff-CAM:  0.2896655985523661
+# auprc 350 Grad-CAM: 0.46949367318291235, Smooth Grad-CAM++: 0.12565959153386552, Score-CAM: 0.3244168458173882, Layer-CAM: 0.3591443264992453, XGrad-CAM: 0.469493715220921,  Diff-CAM:  0.4575501239664496
+# iou 350 Grad-CAM: 0.3011592374126305, Smooth Grad-CAM++: 0.04056114830413473, Score-CAM: 0.18441723631669038, Layer-CAM: 0.2126759953162225, XGrad-CAM: 0.30116000332028214,  Diff-CAM:  0.2896133998899335
+# auprc 400 Grad-CAM: 0.464655286486052, Smooth Grad-CAM++: 0.12705378978772755, Score-CAM: 0.32306635257777966, Layer-CAM: 0.3580750657197651, XGrad-CAM: 0.46465533029375056,  Diff-CAM:  0.4527435926078684
+# iou 400 Grad-CAM: 0.2961379641203549, Smooth Grad-CAM++: 0.04162715009496016, Score-CAM: 0.18402982020824982, Layer-CAM: 0.2117920021809474, XGrad-CAM: 0.29613863452829936,  Diff-CAM:  0.28465456647241
+# auprc 450 Grad-CAM: 0.4703456320414759, Smooth Grad-CAM++: 0.12982203877282117, Score-CAM: 0.3280127874009207, Layer-CAM: 0.36656680582976786, XGrad-CAM: 0.4703456673386778,  Diff-CAM:  0.4615581768624152
+# iou 450 Grad-CAM: 0.30150100520760226, Smooth Grad-CAM++: 0.04447401803007773, Score-CAM: 0.18821795559848892, Layer-CAM: 0.2179358665024216, XGrad-CAM: 0.3015016012909409,  Diff-CAM:  0.29159831631807115
+# auprc 487 Grad-CAM: 0.4662937455447607, Smooth Grad-CAM++: 0.12919958288071712, Score-CAM: 0.3282410548165859, Layer-CAM: 0.36643004679298874, XGrad-CAM: 0.4662937770428553,  Diff-CAM:  0.4588921411837465
+# iou 487 Grad-CAM: 0.29863356802108104, Smooth Grad-CAM++: 0.04481109557552399, Score-CAM: 0.18772294676692722, Layer-CAM: 0.2169968147144568, XGrad-CAM: 0.29863411890957636,  Diff-CAM:  0.2889642298134729
 
 
 # cp /shared/home/v_neelesh_bisht/local_scratch/dl_explanations/rsna/output/npy_v1_299/*.npy /tmp/rsna-dataset/
